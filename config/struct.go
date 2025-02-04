@@ -23,6 +23,7 @@ type BDInfo struct {
 	DBName   string
 }
 
+// TODO: лучше использовать библиотеку для чтения из env как конфиг файл, например viper или envreader
 func LoadEnv() (*Config, error) {
 
 	//err := godotenv.Load()

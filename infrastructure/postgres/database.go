@@ -26,9 +26,13 @@ func NewDB() *DB {
 
 	cfg, err := config.LoadEnv()
 	if err != nil {
+		//TODO: лучше использовать опять нет ошибки
+		// и кст, ошибку лучше выводить в месте, где вызывается функция
+		// и обертовать её через fmt.Errorf
+		// лог фатал лучше не использовать
 		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
 	}
-	log.Println(cfg)
+	log.Println(cfg) //TODO: убрать, что мы не видели что в конфиге
 	conn, err := config.ConnectDB(cfg)
 	if err != nil {
 		log.Fatalf("Ошибка при подключении к базе данных: %v", err)
