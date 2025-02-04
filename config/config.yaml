@@ -1,0 +1,14 @@
+server:
+  port: 8080
+  host: "localhost"
+
+app:
+  version: "1.0.0"
+
+database:
+  host: "my-postgres"
+  port: 5432
+  user: "postgres"
+  password: "mysecretpassword"
+  DBname: "users"
+

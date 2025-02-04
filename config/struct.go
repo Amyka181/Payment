@@ -4,48 +4,52 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4"
-	"os"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	BDVersion
-	BDInfo
-}
-type BDVersion struct {
-	Version string
-}
+	Server struct {
+		Port int    `mapstructure:"port"`
+		Host string `mapstructure:"host"`
+	} `mapstructure:"server"`
 
-type BDInfo struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	DBName   string
+	Database struct {
+		User     string `mapstructure:"user"`
+		Password string `mapstructure:"password"`
+		Name     string `mapstructure:"DBname"`
+		Host     string `mapstructure:"host"`
+		Port     int    `mapstructure:"port"`
+	} `mapstructure:"database"`
+
+	App struct {
+		Version string `mapstructure:"version"`
+	}
 }
 
 // TODO: лучше использовать библиотеку для чтения из env как конфиг файл, например viper или envreader
-func LoadEnv() (*Config, error) {
+func LoadConfig() (*Config, error) {
 
-	//err := godotenv.Load()
-	//if err != nil {
-	//	return nil, fmt.Errorf("Ошибка загрузки .env файла: %v", err)
-	//}
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath("/app")
 
-	config := &Config{
-		BDVersion{Version: os.Getenv("VERSION")},
-		BDInfo{Host: os.Getenv("DB_HOST"),
-			Port:     os.Getenv("DB_PORT"),
-			User:     os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWORD"),
-			DBName:   os.Getenv("DB_NAME")},
+	err := viper.ReadInConfig()
+	if err != nil {
+		return nil, fmt.Errorf("ошибка чтения конфигурации: %w", err)
 	}
 
-	return config, nil
+	var cfg Config
+	err = viper.Unmarshal(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка парсинга конфигурации: %w", err)
+	}
+
+	return &cfg, nil
 }
 
 func ConnectDB(cfg *Config) (*pgx.Conn, error) {
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port)
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%d",
+		cfg.Database.User, cfg.Database.Password, cfg.Database.Host, cfg.Database.Port)
 
 	conn, err := pgx.Connect(context.Background(), connStr)
 	if err != nil {

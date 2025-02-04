@@ -13,3 +13,4 @@ networks:
   bankirka_app-network:
     external: true
 
+

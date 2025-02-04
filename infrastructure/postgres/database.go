@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4"
-	"log"
 )
 
 type DB struct {
@@ -22,43 +21,35 @@ type UpdateUser struct {
 	Change int
 }
 
-func NewDB() *DB {
+func NewDB(cfg *config.Config) (*DB, error) {
 
-	cfg, err := config.LoadEnv()
-	if err != nil {
-		//TODO: лучше использовать опять нет ошибки
-		// и кст, ошибку лучше выводить в месте, где вызывается функция
-		// и обертовать её через fmt.Errorf
-		// лог фатал лучше не использовать
-		log.Fatalf("Ошибка загрузки конфигурации: %v", err)
-	}
-	log.Println(cfg) //TODO: убрать, что мы не видели что в конфиге
 	conn, err := config.ConnectDB(cfg)
 	if err != nil {
-		log.Fatalf("Ошибка при подключении к базе данных: %v", err)
+		//log.Fatalf("Ошибка при подключении к базе данных: %v", err)
+		return nil, fmt.Errorf("Ошибка при подключении к базе данных: %v", err)
 	}
 
 	fmt.Println("Успешное подключение к базе данных!")
-	return &DB{Conn: conn}
+	return &DB{Conn: conn}, nil
 }
 
 func (db *DB) ChangeBalance(UserUp *UpdateUser) error {
 	tx, err := db.Conn.Begin(context.Background())
 	if err != nil {
-		log.Fatal("Unable to start transaction:", err)
+		return fmt.Errorf("Невозможно провести операцию", err)
 	}
 
 	_, err = db.ShowBalanceTx(tx, UserUp.ID)
 	if err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return fmt.Errorf("Аккаунт не существует", err)
 	}
 
 	reqSql := "UPDATE public.users SET balance=balance+$1 WHERE id=$2"
 	_, err = tx.Exec(context.Background(), reqSql, UserUp.Change, UserUp.ID)
 	if err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return fmt.Errorf("Невозможно провести операцию", err)
 	}
 
 	tx.Commit(context.Background())
